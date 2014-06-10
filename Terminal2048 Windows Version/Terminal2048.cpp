@@ -1,3 +1,10 @@
+//************************************//
+// TERMINAL 2048 by Matheus Marques	  //
+// Console Application for 2048 Game  //
+// Date: June'10'2014				  //
+// Windows Version					  //
+//************************************//
+
 #include "Terminal2048.h"
 
 Terminal2048::Terminal2048()
