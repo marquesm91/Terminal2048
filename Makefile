@@ -1,14 +1,16 @@
 # Compiler, Flags, Directory Name and Executable Name
 CC= g++
 CFLAGS= -std=c++11
-ODIR= ./Objects
+EFLAGS= -lncurses
+ODIR= ./obj
+EDIR= ./bin
 EXEC1= t2048
 
 # Source codes and objects
-SRCS= Tile.cpp main.cpp
+SRCS= t2048_Linux.cpp
 OBJS= $(patsubst %.cpp,$(ODIR)/%.o,$(SRCS))
 
-all: $(EXEC1)
+all: $(EDIR)/$(EXEC1)
 
 # Create paste for Objects
 $(ODIR):
@@ -18,17 +20,18 @@ $(ODIR):
 $(OBJS): | $(ODIR)
 
 # Special dependencies
-main.o: Tiles.h
+main.o: t2048_Linux.h
 
 # Compile and create objects
 $(ODIR)/%.o: %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ $(EFLAGS)
 
 # Generate the executables
-$(EXEC1): $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $@
+$(EDIR)/$(EXEC1): $(OBJS)
+	@mkdir -p $(EDIR) # Create bin paste
+	$(CC) $(CFLAGS) $^ -o $@ $(EFLAGS)
 	rm -f *.settings
 
 # Delete objects, executables and new directories
 clean:
-	rm -rf $(OBJS) $(EXEC1) $(ODIR)
+	rm -rf $(OBJS) $(ODIR) $(EDIR)/* $(EDIR)

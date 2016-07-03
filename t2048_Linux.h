@@ -2,7 +2,7 @@
 // TERMINAL 2048 by Matheus Marques   //
 // Console Application for 2048 Game  //
 // Date: June'10'2014                 //
-// Windows Version                    //
+// Linux   Version                    //
 //************************************//
 
 #include <iostream>
@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <string>
 #include <fstream>
-
+ 
 
 #define YES 89
 #define NO 78

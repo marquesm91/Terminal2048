@@ -5,7 +5,8 @@
 // Linux Version                      //
 //************************************//
 
-#include "Terminal2048.h"
+#include "t2048_Linux.h"
+#include <ncurses.h>
 
 Terminal2048::Terminal2048()
 {
@@ -14,7 +15,7 @@ Terminal2048::Terminal2048()
 	tiles_availables = max_tiles;
 	tile_2048 = false;
 	try_again = false;
-	best_score = get_best_score();
+	//best_score = get_best_score();
 
 	for (unsigned int i = 0; i < max_tiles; i++)
 	{
@@ -494,9 +495,13 @@ int main(void)
 {
 	bool keep_playing;
 
+	initscr(); // Initialize Ncurses
+
+	start_color(); // Initialize colors in Ncurses
+
 	do{
 
-		std::auto_ptr<Terminal2048> g(new Terminal2048);
+		Terminal2048 *g(new Terminal2048);
 		keep_playing = g->start();
 
 	} while (keep_playing == true);
