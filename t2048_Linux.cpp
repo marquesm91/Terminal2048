@@ -1,12 +1,11 @@
 //************************************//
 // TERMINAL 2048 by Matheus Marques   //
 // Console Application for 2048 Game  //
-// Date: August'23'2014               //
+// Date: June'10'2014                 //
 // Linux Version                      //
 //************************************//
 
 #include "t2048_Linux.h"
-#include <ncurses.h>
 
 Terminal2048::Terminal2048()
 {
