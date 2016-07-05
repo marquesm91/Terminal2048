@@ -95,15 +95,17 @@ void Terminal2048::choose_color_for_tile(unsigned tile_number)
 void Terminal2048::refresh()
 {
 	clear();
-	set_color(white, black);
-	std::cout << "SCORE: " << score << std::endl;
+	attron(COLOR_PAIR(1));
+	mvprintw(1, 1, "SCORE: %d", score);
 
-	for (unsigned pos = 0; pos < max_tiles; pos++)
-	{
-		if (pos % 4 == 0) std::cout << std::endl<< std::endl;
+	for(unsigned j = 0; j < SIZEGRID; j++)
+		for(unsigned i = 0; i < SIZEGRID; i++)
+		{
+			unsigned pos = j*SIZEGRID + i;
 
-		choose_color_for_tile(tile[pos].value);	
-	}
+			mvprintw(j+2, i+2, "%d", tile[pos].value);
+		//choose_color_for_tile(tile[pos].value);	
+		}
 }
 
 void Terminal2048::makepoint(unsigned int value)
@@ -116,25 +118,25 @@ void Terminal2048::addtile()
 	
 	if (tiles_availables > 0)
 	{
-		std::default_random_engine generator((unsigned int)time(0));
-		std::uniform_int_distribution<int> distribution_to_position(0, max_tiles - 1);
-		std::uniform_int_distribution<int> distribution_to_number(0, 100);
+		unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::default_random_engine generator(seed);
+		std::uniform_int_distribution<int> distribution_for_position(0, max_tiles - 1);
+		std::uniform_int_distribution<int> distribution_for_number(0, 100);
 
 		int pos;
 
 		do{ 
 			
-			pos = distribution_to_position(generator);
+			pos = distribution_for_position(generator);
 
 		} while (tile[pos].exist != false);
 
-		(distribution_to_number(generator) < 90) ? (tile[pos].value = 2) : (tile[pos].value = 4);
+		(distribution_for_number(generator) < 90) ? (tile[pos].value = 2) : (tile[pos].value = 4);
 
 		tile[pos].exist = true;
 
 		tiles_availables--;
-	}
-	
+	}	
 }
 
 void Terminal2048::move_up()
@@ -190,7 +192,6 @@ void Terminal2048::move_up()
 		}while (searcher < max_tiles);
 
 	}
-
 }
 
 void Terminal2048::move_down()
@@ -246,7 +247,6 @@ void Terminal2048::move_down()
 		}while (searcher >= 0);
 
 	}
-
 }
 
 void Terminal2048::move_left()
@@ -302,7 +302,6 @@ void Terminal2048::move_left()
 		}while (searcher < (SIZEGRID + j));
 
 	}
-
 }
 
 void Terminal2048::move_right()
@@ -357,7 +356,6 @@ void Terminal2048::move_right()
 		}while (searcher >= ((j - SIZEGRID) + 1));
 
 	}
-
 }
 
 bool Terminal2048::check_gameover()
@@ -469,36 +467,36 @@ bool Terminal2048::start()
 		if (tile_2048)
 			return call_youwin();
 
-		key_stroke = getkey();
+		key_stroke = getch();
 
 		made_something = 0;
-
-		if(key_stroke == '\033'){
-			getkey();
-			switch (key_stroke =getkey())
-			{
-				case 'A': move_up(); break;
-				case 'B': move_down(); break;
-				case 'C': move_right(); break;
-				case 'D': move_left(); break;
-				//default: std::cout << (int)key_stroke << std::endl;
-			}
+		
+		switch ((int)key_stroke)
+		{
+			case K_UP: 		move_up(); 		break;
+			case K_DOWN:  move_down();	break;
+			case K_RIGHT: move_right();	break;
+			case K_LEFT:  move_left();	break;
+			//default: std::cout << (int)key_stroke << std::endl;
 		}
-
-		fflush ( stdin );
 	}
-
 }
 
 // Main Program
-/*int main(void)
+int main(void)
 {
 	bool keep_playing;
+	char ch;
 
-	initscr(); // Initialize Ncurses
-
-	start_color(); // Initialize colors in Ncurses
-
+	initscr();								// Start curses mode
+	start_color();							// Start the color functionality
+	cbreak();								// Line buffering disabled
+	use_default_colors();
+	curs_set(0);							// hide cursor console
+	keypad(stdscr, TRUE);					// For Arrow Keys
+	noecho();								// disable echo() in getch()
+	init_pair(1, COLOR_WHITE, COLOR_DEFAULT);
+	
 	do{
 
 		Terminal2048 *g(new Terminal2048);
@@ -506,10 +504,14 @@ bool Terminal2048::start()
 
 	} while (keep_playing == true);
 
+	attroff(COLOR_PAIR(1));
+	refresh();
+	endwin();			// End curses mode
 	return 0;
-}*/
+}
 
 // NCurses tests main
+/*
 typedef struct _win_border_struct {
 	chtype 	left, right, top, under, 
 	 	topleft, topright, underleft, underright;
@@ -573,7 +575,7 @@ int main(int argc, char *argv[])
 				break;	
 		}
 	}
-	endwin();			/* End curses mode		  */
+	endwin();			// End curses mode		  
 	return 0;
 }
 void init_win_params(WIN *p_win)
@@ -632,4 +634,4 @@ void create_box(WIN *p_win, bool flag)
 				
 	refresh();
 
-}
+}*/

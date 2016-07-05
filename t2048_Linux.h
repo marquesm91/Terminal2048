@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <thread>
+#include <chrono>
 #include <random>
 #include <termios.h>
 #include <unistd.h>
@@ -16,6 +17,13 @@
 
 #define YES 89
 #define NO 78
+#define COLOR_DEFAULT -1
+
+// Integer numbers for Arrow Keys
+#define K_UP 3
+#define K_DOWN 2
+#define K_RIGHT 5		
+#define K_LEFT 4
 
 static const char tabulation = 9;
 static const int SIZEGRID = 4;
