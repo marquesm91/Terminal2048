@@ -24,7 +24,7 @@ Terminal2048::Terminal2048()
 
 	addtile();
 	addtile();
-	refresh();
+	rrefresh();
 }
 
 void Terminal2048::clear()
@@ -67,13 +67,12 @@ std::string Terminal2048::set_color(colors textcol, colors backcol)
 	return color;
 }
 
-void Terminal2048::choose_color_for_tile(unsigned tile_number)
+void Terminal2048::choose_color_tile(unsigned tile_number)
 {
-	std::string color = "";
 
 	switch (tile_number)
 	{
-	case 0:		color = set_color(white, black); break;
+	/*case 0:		color = set_color(white, black); break;
 	case 2:		color = set_color(cyan, black); break;
 	case 4:		color = set_color(yellow, black); break;
 	case 8:		color = set_color(green, black); break;
@@ -84,28 +83,54 @@ void Terminal2048::choose_color_for_tile(unsigned tile_number)
 	case 256:	color = set_color(dark_yellow, black); break;
 	case 512:	color = set_color(dark_green, black); break;
 	case 1024:	color = set_color(dark_purple, black); break;
-	case 2048:	color = set_color(dark_red, black); break;
+	case 2048:	color = set_color(dark_red, black); break;*/
+	case 0:		attron(COLOR_PAIR(1)); break;
+	case 2:		attron(COLOR_PAIR(2)); break;
+	case 4:		attron(COLOR_PAIR(3)); break;
+	case 8:		attron(COLOR_PAIR(4)); break;
+	case 16:	attron(COLOR_PAIR(5)); break;
+	case 32:	attron(COLOR_PAIR(6)); break;
+	case 64:	attron(COLOR_PAIR(7)); break;
+	case 128:	attron(COLOR_PAIR(8)); break;
+	case 256:	attron(COLOR_PAIR(9)); break;
+	case 512:	attron(COLOR_PAIR(10)); break;
+	case 1024:	attron(COLOR_PAIR(11)); break;
+	case 2048:	attron(COLOR_PAIR(12)); break;
 	}
-
-	color += std::to_string(tile_number);
-
-	std::cout << color << tabulation;
 }
 
-void Terminal2048::refresh()
+void Terminal2048::rrefresh()
 {
-	clear();
 	attron(COLOR_PAIR(1));
 	mvprintw(1, 1, "SCORE: %d", score);
 
-	for(unsigned j = 0; j < SIZEGRID; j++)
-		for(unsigned i = 0; i < SIZEGRID; i++)
+	unsigned v_space = 0; // vertical space
+	unsigned h_space = 0; // horizontal space
+	unsigned start_posx = (LINES/2)-(max_tiles/4); // start position x for drawing
+	unsigned start_posy = (COLS/2)-(max_tiles/2); // start position y for drawing
+
+	for(unsigned j = 0; j < SIZEGRID; j++, v_space += 2)
+	{
+		h_space = 0;
+
+		for(unsigned i = 0; i < SIZEGRID; i++, h_space += 4)
 		{
 			unsigned pos = j*SIZEGRID + i;
 
-			mvprintw(j+2, i+2, "%d", tile[pos].value);
-		//choose_color_for_tile(tile[pos].value);	
+			mvhline(j + start_posx + v_space,
+						  i + start_posy + h_space,
+						  ' ',
+						  i + (h_space - 1) + start_posy + h_space);
+
+			choose_color_tile(tile[pos].value);
+
+			mvprintw(j + start_posx + v_space, // x position
+							 i + start_posy + h_space, // y position
+							 "%d",										 // what to draw
+							 tile[pos].value);				 // what var to draw
 		}
+	}
+	refresh();
 }
 
 void Terminal2048::makepoint(unsigned int value)
@@ -457,7 +482,7 @@ bool Terminal2048::start()
 		if (made_something)
 		{
 			addtile();
-			refresh();
+			rrefresh();
 		}
 		
 		if (!tiles_availables)
@@ -482,6 +507,8 @@ bool Terminal2048::start()
 	}
 }
 
+void setup_colors();
+
 // Main Program
 int main(void)
 {
@@ -495,8 +522,9 @@ int main(void)
 	curs_set(0);							// hide cursor console
 	keypad(stdscr, TRUE);					// For Arrow Keys
 	noecho();								// disable echo() in getch()
-	init_pair(1, COLOR_WHITE, COLOR_DEFAULT);
-	
+
+	setup_colors(); 
+
 	do{
 
 		Terminal2048 *g(new Terminal2048);
@@ -504,12 +532,89 @@ int main(void)
 
 	} while (keep_playing == true);
 
-	attroff(COLOR_PAIR(1));
+	/*attroff(COLOR_PAIR(1));
+	attroff(COLOR_PAIR(2));
+	attroff(COLOR_PAIR(3));
+	attroff(COLOR_PAIR(4));
+	attroff(COLOR_PAIR(5));
+	attroff(COLOR_PAIR(6));
+	attroff(COLOR_PAIR(7));
+	attroff(COLOR_PAIR(8));
+	attroff(COLOR_PAIR(9));
+	attroff(COLOR_PAIR(10));
+	attroff(COLOR_PAIR(11));	
+	attroff(COLOR_PAIR(12));*/
+	standend();
 	refresh();
 	endwin();			// End curses mode
 	return 0;
 }
 
+void setup_colors()
+{
+	unsigned R, G, B;
+
+	// 1 - WHITE
+	R = 255; G = 255; B = 255;
+	init_color(COLOR_WHITE, R*1000/255, G*1000/255, B*1000/255);
+
+	// 2 - CYAN
+	R = 51; G = 255; B = 255;
+	init_color(COLOR_CYAN, R*1000/255, G*1000/255, B*1000/255);
+
+	// 3 - YELLOW
+	R = 255; G = 255; B = 51;
+	init_color(COLOR_YELLOW, R*1000/255, G*1000/255, B*1000/255);
+
+	// 4 - GREEN
+	R = 51; G = 255; B = 51;
+	init_color(COLOR_GREEN, R*1000/255, G*1000/255, B*1000/255);
+
+	// 5 - MAGENTA
+	R = 255; G = 51; B = 255;
+	init_color(COLOR_MAGENTA, R*1000/255, G*1000/255, B*1000/255);
+
+	// 6 - RED
+	R = 255; G = 51; B = 51;
+	init_color(COLOR_RED, R*1000/255, G*1000/255, B*1000/255);
+
+	// 7 - GRAY
+	R = 160; G = 160; B = 160;
+	init_color(COLOR_GRAY, R*1000/255, G*1000/255, B*1000/255);
+
+	// 8 - DARK_CYAN
+	R = 0; G = 102; B = 102;
+	init_color(COLOR_DARK_CYAN, R*1000/255, G*1000/255, B*1000/255);
+
+	// 9 - DARK_YELLOW
+	R = 102; G = 102; B = 0;
+	init_color(COLOR_DARK_YELLOW, R*1000/255, G*1000/255, B*1000/255);
+
+	// 10 - DARK_GREEN
+	R = 0; G = 102; B = 0;
+	init_color(COLOR_DARK_GREEN, R*1000/255, G*1000/255, B*1000/255);
+
+	// 11 - DARK_MAGENTA
+	R = 102; G = 0; B = 102;
+	init_color(COLOR_DARK_MAGENTA, R*1000/255, G*1000/255, B*1000/255);
+
+	// 12 - DARK_RED
+	R = 102; G = 0; B = 0;
+	init_color(COLOR_DARK_RED, R*1000/255, G*1000/255, B*1000/255);
+
+	init_pair(1, COLOR_WHITE, COLOR_DEFAULT); // 0
+	init_pair(2, COLOR_CYAN, COLOR_DEFAULT); // 2
+	init_pair(3, COLOR_YELLOW, COLOR_DEFAULT); // 4
+	init_pair(4, COLOR_GREEN, COLOR_DEFAULT); // 8
+	init_pair(5, COLOR_MAGENTA, COLOR_DEFAULT); // 16
+	init_pair(6, COLOR_RED, COLOR_DEFAULT); // 32
+	init_pair(7, COLOR_GRAY, COLOR_DEFAULT); // 64
+	init_pair(8, COLOR_DARK_CYAN, COLOR_DEFAULT); // 128
+	init_pair(9, COLOR_DARK_YELLOW, COLOR_DEFAULT); // 256
+	init_pair(10, COLOR_DARK_GREEN, COLOR_DEFAULT); // 512
+	init_pair(11, COLOR_DARK_MAGENTA, COLOR_DEFAULT); // 1024
+	init_pair(12, COLOR_DARK_RED, COLOR_DEFAULT); // 2048
+}
 // NCurses tests main
 /*
 typedef struct _win_border_struct {

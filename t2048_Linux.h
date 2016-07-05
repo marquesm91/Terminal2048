@@ -25,6 +25,14 @@
 #define K_RIGHT 5		
 #define K_LEFT 4
 
+// Extra colors
+#define COLOR_GRAY 8
+#define COLOR_DARK_CYAN 9
+#define COLOR_DARK_YELLOW 10
+#define COLOR_DARK_GREEN 11
+#define COLOR_DARK_MAGENTA 12
+#define COLOR_DARK_RED 13
+
 static const char tabulation = 9;
 static const int SIZEGRID = 4;
 static const int max_tiles = SIZEGRID*SIZEGRID;
@@ -60,7 +68,7 @@ private:
 
 	// Methods for basic instructions
 	void clear();
-	void refresh();
+	void rrefresh();
 	void addtile();
 	char getkey();
 
@@ -70,7 +78,7 @@ private:
 
 	// Methods for change colors
 	std::string set_color(colors textcol, colors backcol);
-	void choose_color_for_tile(unsigned number_tile);
+	void choose_color_tile(unsigned number_tile);
 	
 	// Methods for Moviments
 	void move_up();
