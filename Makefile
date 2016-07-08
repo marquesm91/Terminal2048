@@ -7,7 +7,7 @@ EDIR= ./bin
 EXEC1= t2048
 
 # Source codes and objects
-SRCS= t2048_Linux.cpp
+SRCS= t2048.cpp
 OBJS= $(patsubst %.cpp,$(ODIR)/%.o,$(SRCS))
 
 all: $(EDIR)/$(EXEC1)

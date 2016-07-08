@@ -5,7 +5,7 @@
 // Linux Version                      //
 //************************************//
 
-#include "t2048_Linux.h"
+#include "t2048.h"
 
 Terminal2048::Terminal2048()
 {
@@ -532,7 +532,8 @@ int main(void)
 
 	} while (keep_playing == true);
 
-	/*attroff(COLOR_PAIR(1));
+	refresh();
+	attroff(COLOR_PAIR(1));
 	attroff(COLOR_PAIR(2));
 	attroff(COLOR_PAIR(3));
 	attroff(COLOR_PAIR(4));
@@ -543,9 +544,8 @@ int main(void)
 	attroff(COLOR_PAIR(9));
 	attroff(COLOR_PAIR(10));
 	attroff(COLOR_PAIR(11));	
-	attroff(COLOR_PAIR(12));*/
+	attroff(COLOR_PAIR(12));
 	standend();
-	refresh();
 	endwin();			// End curses mode
 	return 0;
 }
