@@ -14,7 +14,11 @@
 #include <string>
 #include <fstream>
 #include <ncurses.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <ctype.h>
 
+#define RESETCOLOR "echo -e \033[0m"
 #define YES 89
 #define NO 78
 #define COLOR_DEFAULT -1
@@ -32,6 +36,8 @@
 #define COLOR_DARK_GREEN 11
 #define COLOR_DARK_MAGENTA 12
 #define COLOR_DARK_RED 13
+
+using namespace std;
 
 static const char tabulation = 9;
 static const int SIZEGRID = 4;

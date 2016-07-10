@@ -8,11 +8,11 @@ Console Application of 2048 Game using **Ncurses**
 
 Ncurses:
 
-```sh
+```
 sudo apt-get install libncurses5-dev
 ```
 
-Use ```sh ncurses.h``` on your header file
+Use ```ncurses.h``` on your header file
 
 ## Contributors
 

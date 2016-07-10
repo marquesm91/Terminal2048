@@ -84,24 +84,25 @@ void Terminal2048::choose_color_tile(unsigned tile_number)
 	case 512:	color = set_color(dark_green, black); break;
 	case 1024:	color = set_color(dark_purple, black); break;
 	case 2048:	color = set_color(dark_red, black); break;*/
-	case 0:		attron(COLOR_PAIR(1)); break;
-	case 2:		attron(COLOR_PAIR(2)); break;
-	case 4:		attron(COLOR_PAIR(3)); break;
-	case 8:		attron(COLOR_PAIR(4)); break;
-	case 16:	attron(COLOR_PAIR(5)); break;
-	case 32:	attron(COLOR_PAIR(6)); break;
-	case 64:	attron(COLOR_PAIR(7)); break;
-	case 128:	attron(COLOR_PAIR(8)); break;
-	case 256:	attron(COLOR_PAIR(9)); break;
-	case 512:	attron(COLOR_PAIR(10)); break;
-	case 1024:	attron(COLOR_PAIR(11)); break;
-	case 2048:	attron(COLOR_PAIR(12)); break;
+	case 0:		attron(A_BOLD); attron(COLOR_PAIR(1)); break;
+	case 2:		attron(A_BOLD); attron(COLOR_PAIR(2)); break;
+	case 4:		attron(A_BOLD); attron(COLOR_PAIR(3)); break;
+	case 8:		attron(A_BOLD); attron(COLOR_PAIR(4)); break;
+	case 16:	attron(A_BOLD); attron(COLOR_PAIR(5)); break;
+	case 32:	attron(A_BOLD); attron(COLOR_PAIR(6)); break;
+	case 64:	attron(A_BOLD); attron(COLOR_PAIR(7)); break;
+	case 128:	attroff(A_BOLD); attron(COLOR_PAIR(2)); break;
+	case 256:	attroff(A_BOLD); attron(COLOR_PAIR(3)); break;
+	case 512:	attroff(A_BOLD); attron(COLOR_PAIR(4)); break;
+	case 1024: 	attroff(A_BOLD); attron(COLOR_PAIR(5)); break;
+	case 2048: 	attroff(A_BOLD); attron(COLOR_PAIR(6)); break;
 	}
 }
 
 void Terminal2048::rrefresh()
 {
 	attron(COLOR_PAIR(1));
+	attron(A_BOLD);
 	mvprintw(1, 1, "SCORE: %d", score);
 
 	unsigned v_space = 0; // vertical space
@@ -130,6 +131,7 @@ void Terminal2048::rrefresh()
 							 tile[pos].value);				 // what var to draw
 		}
 	}
+
 	refresh();
 }
 
@@ -385,22 +387,22 @@ void Terminal2048::move_right()
 
 bool Terminal2048::check_gameover()
 {
-	int ref = 0;
-	int comparator = 0;
-	int col = 0;
+	int ref = 0; // reference
+	int target = 0; // target to evaluate
+	int col = 0; // column
 	bool checker = false;
 
 	// check horizontal
-	for (ref = 0, comparator = 0; comparator < max_tiles; ref++)
+	for (ref = 0, target = 0; target < max_tiles; ref++)
 	{
-		comparator = ref + 1;
-		if ( comparator % 4 == 0)
+		target = ref + 1;
+		if ( target % 4 == 0)
 		{
 			ref++;
-			comparator++;
+			target++;
 		}
 
-		if (tile[ref].value == tile[comparator].value) 
+		if (tile[ref].value == tile[target].value) 
 		{
 			checker = false;
 			return checker;
@@ -413,17 +415,17 @@ bool Terminal2048::check_gameover()
 	}
 
 	// check vertical
-	for (ref = 0, col = 0, comparator = 0; col < SIZEGRID; ref += 4)
+	for (ref = 0, col = 0, target = 0; col < SIZEGRID; ref += SIZEGRID)
 	{
-		if ((comparator = ref + 4) > max_tiles)
+		if ((target = ref + 4) > max_tiles)
 		{	
 			col++;
 			ref = col;
-			comparator = ref + 4;
+			target = ref + 4;
 		}
 
 		
-		if ((tile[ref].value == tile[comparator].value) && col < SIZEGRID)
+		if ((tile[ref].value == tile[target].value) && col < SIZEGRID)
 		{
 			checker = false;
 			return checker;
@@ -454,27 +456,38 @@ bool Terminal2048::check_youwin(unsigned number_tile)
 bool Terminal2048::call_youwin()
 {
 	set_color(white, black);
-	std::cout << std::endl << std::endl << "YOU WIN!" << std::endl << "Try again?(y/n) ";
+	std::cout << std::endl << std::endl << "YOU WIN!" << std::endl << "Try again?(Y/n) ";
 
 	return call_tryagain();
 }
 
 bool Terminal2048::call_tryagain()
 {
+	//std::cout << std::endl << std::endl << "YOU WIN!" << std::endl << "Try again?(Y/n) ";
+	attron(A_BOLD);
+	attron(COLOR_PAIR(1));
+	mvprintw(LINES-1, 1, "You got a 2048 tile! Try Again? (Y/n)");
+	refresh();
+
 	do{
 
 		key_stroke = getkey();
+		key_stroke = toupper(key_stroke);
+		cout << (int)key_stroke << endl;
 
-	} while (key_stroke != NO && key_stroke != YES);
+	} while (key_stroke != 'Y' && key_stroke != 'N' && (int)key_stroke != 13);
 
-	if (key_stroke == YES)
-		return true;
+	if (key_stroke == 'Y' || (int)key_stroke == 13)
+		cout << "sim!" << endl;//return true;
 	else
-		return false;
+		cout << "nao!" << endl;//return false;
 }
 
 bool Terminal2048::start()
 {
+
+	//call_tryagain();
+	//clear();
 
 	while (true)
 	{
@@ -498,7 +511,7 @@ bool Terminal2048::start()
 		
 		switch ((int)key_stroke)
 		{
-			case K_UP: 		move_up(); 		break;
+			case K_UP: 		move_up(); 	break;
 			case K_DOWN:  move_down();	break;
 			case K_RIGHT: move_right();	break;
 			case K_LEFT:  move_left();	break;
@@ -509,9 +522,26 @@ bool Terminal2048::start()
 
 void setup_colors();
 
+void CtrlC_Event(int s){
+    //system(RESETCOLOR); 
+    
+	attron(COLOR_PAIR(0));
+	standend();
+    refresh();
+    endwin();	// End curses mode
+    exit(1); 
+}
+
 // Main Program
 int main(void)
 {
+	// Calls ctrlc_event when we get CTRL + C event
+	struct sigaction sigIntHandler;
+   	sigIntHandler.sa_handler = CtrlC_Event;
+   	sigemptyset(&sigIntHandler.sa_mask);
+   	sigIntHandler.sa_flags = 0;
+   	sigaction(SIGINT, &sigIntHandler, NULL);
+
 	bool keep_playing;
 	char ch;
 
@@ -532,21 +562,11 @@ int main(void)
 
 	} while (keep_playing == true);
 
-	refresh();
-	attroff(COLOR_PAIR(1));
-	attroff(COLOR_PAIR(2));
-	attroff(COLOR_PAIR(3));
-	attroff(COLOR_PAIR(4));
-	attroff(COLOR_PAIR(5));
-	attroff(COLOR_PAIR(6));
-	attroff(COLOR_PAIR(7));
-	attroff(COLOR_PAIR(8));
-	attroff(COLOR_PAIR(9));
-	attroff(COLOR_PAIR(10));
-	attroff(COLOR_PAIR(11));	
-	attroff(COLOR_PAIR(12));
+
 	standend();
+	refresh();
 	endwin();			// End curses mode
+	
 	return 0;
 }
 
@@ -555,52 +575,52 @@ void setup_colors()
 	unsigned R, G, B;
 
 	// 1 - WHITE
-	R = 255; G = 255; B = 255;
-	init_color(COLOR_WHITE, R*1000/255, G*1000/255, B*1000/255);
+	//R = 255; G = 255; B = 255;
+	//init_color(COLOR_WHITE, R*1000/255, G*1000/255, B*1000/255);
 
 	// 2 - CYAN
-	R = 51; G = 255; B = 255;
-	init_color(COLOR_CYAN, R*1000/255, G*1000/255, B*1000/255);
+	//R = 51; G = 255; B = 255;
+	//init_color(COLOR_CYAN, R*1000/255, G*1000/255, B*1000/255);
 
 	// 3 - YELLOW
-	R = 255; G = 255; B = 51;
-	init_color(COLOR_YELLOW, R*1000/255, G*1000/255, B*1000/255);
+	//R = 255; G = 255; B = 51;
+	//init_color(COLOR_YELLOW, R*1000/255, G*1000/255, B*1000/255);
 
 	// 4 - GREEN
-	R = 51; G = 255; B = 51;
-	init_color(COLOR_GREEN, R*1000/255, G*1000/255, B*1000/255);
+	//R = 51; G = 255; B = 51;
+	//init_color(COLOR_GREEN, R*1000/255, G*1000/255, B*1000/255);
 
 	// 5 - MAGENTA
-	R = 255; G = 51; B = 255;
-	init_color(COLOR_MAGENTA, R*1000/255, G*1000/255, B*1000/255);
+	//R = 255; G = 51; B = 255;
+	//init_color(COLOR_MAGENTA, R*1000/255, G*1000/255, B*1000/255);
 
 	// 6 - RED
-	R = 255; G = 51; B = 51;
-	init_color(COLOR_RED, R*1000/255, G*1000/255, B*1000/255);
+	//R = 255; G = 51; B = 51;
+	//init_color(COLOR_RED, R*1000/255, G*1000/255, B*1000/255);
 
 	// 7 - GRAY
-	R = 160; G = 160; B = 160;
-	init_color(COLOR_GRAY, R*1000/255, G*1000/255, B*1000/255);
+	//R = 160; G = 160; B = 160;
+	//init_color(COLOR_GRAY, R*1000/255, G*1000/255, B*1000/255);
 
 	// 8 - DARK_CYAN
-	R = 0; G = 102; B = 102;
-	init_color(COLOR_DARK_CYAN, R*1000/255, G*1000/255, B*1000/255);
+	//R = 0; G = 102; B = 102;
+	//init_color(COLOR_DARK_CYAN, R*1000/255, G*1000/255, B*1000/255);
 
 	// 9 - DARK_YELLOW
-	R = 102; G = 102; B = 0;
-	init_color(COLOR_DARK_YELLOW, R*1000/255, G*1000/255, B*1000/255);
+	//R = 102; G = 102; B = 0;
+	//init_color(COLOR_DARK_YELLOW, R*1000/255, G*1000/255, B*1000/255);
 
 	// 10 - DARK_GREEN
-	R = 0; G = 102; B = 0;
-	init_color(COLOR_DARK_GREEN, R*1000/255, G*1000/255, B*1000/255);
+	//R = 0; G = 102; B = 0;
+	//init_color(COLOR_DARK_GREEN, R*1000/255, G*1000/255, B*1000/255);
 
 	// 11 - DARK_MAGENTA
-	R = 102; G = 0; B = 102;
-	init_color(COLOR_DARK_MAGENTA, R*1000/255, G*1000/255, B*1000/255);
+	//R = 102; G = 0; B = 102;
+	//init_color(COLOR_DARK_MAGENTA, R*1000/255, G*1000/255, B*1000/255);
 
 	// 12 - DARK_RED
-	R = 102; G = 0; B = 0;
-	init_color(COLOR_DARK_RED, R*1000/255, G*1000/255, B*1000/255);
+	//R = 102; G = 0; B = 0;
+	//init_color(COLOR_DARK_RED, R*1000/255, G*1000/255, B*1000/255);
 
 	init_pair(1, COLOR_WHITE, COLOR_DEFAULT); // 0
 	init_pair(2, COLOR_CYAN, COLOR_DEFAULT); // 2
@@ -608,12 +628,13 @@ void setup_colors()
 	init_pair(4, COLOR_GREEN, COLOR_DEFAULT); // 8
 	init_pair(5, COLOR_MAGENTA, COLOR_DEFAULT); // 16
 	init_pair(6, COLOR_RED, COLOR_DEFAULT); // 32
-	init_pair(7, COLOR_GRAY, COLOR_DEFAULT); // 64
-	init_pair(8, COLOR_DARK_CYAN, COLOR_DEFAULT); // 128
-	init_pair(9, COLOR_DARK_YELLOW, COLOR_DEFAULT); // 256
-	init_pair(10, COLOR_DARK_GREEN, COLOR_DEFAULT); // 512
-	init_pair(11, COLOR_DARK_MAGENTA, COLOR_DEFAULT); // 1024
-	init_pair(12, COLOR_DARK_RED, COLOR_DEFAULT); // 2048
+	init_pair(7, COLOR_BLUE, COLOR_DEFAULT); // 64
+	//init_pair(8, COLOR_DARK_CYAN, COLOR_DEFAULT); // 128
+	//init_pair(9, COLOR_DARK_YELLOW, COLOR_DEFAULT); // 256
+	//init_pair(10, COLOR_DARK_GREEN, COLOR_DEFAULT); // 512
+	//init_pair(11, COLOR_DARK_MAGENTA, COLOR_DEFAULT); // 1024
+	//init_pair(12, COLOR_DARK_RED, COLOR_DEFAULT); // 2048
+	//init_pair(13, COLOR_DEFAULT, COLOR_DEFAULT); // 0
 }
 // NCurses tests main
 /*
