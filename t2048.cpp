@@ -7,15 +7,20 @@
 
 #include "t2048.h"
 
+Terminal2048 *g(new Terminal2048());
+
 Terminal2048::Terminal2048()
 {
-	score = 0;
-	made_something = 0;
-	tiles_availables = max_tiles;
-	tile_2048 = false;
-	try_again = false;
-	//best_score = get_best_score();
+	score = 0; 													// Initial current score
+	made_something = 1; 								// to addtiles and print what change
+	tiles_availables = max_tiles; 			// available tiles at the game start is always the size board (or max_tiles)
+	biggest_tile = 0; 									// biggest tile at the game start is always 0
+	status_game = PLAYING; 							// always start the game as PLAYING
+	previous_random_position_tile = -1; // help to improve random algorithm
 
+	update_best_score();
+
+	// Initilize every tile with 0 and fale existance
 	for (unsigned int i = 0; i < max_tiles; i++)
 	{
 		tile[i].exist = false;
@@ -23,132 +28,107 @@ Terminal2048::Terminal2048()
 	}
 
 	addtile();
-	addtile();
-	rrefresh();
 }
 
-void Terminal2048::clear()
+void Terminal2048::update_best_score()
 {
-	// command for clear the terminal
-	// \033[2J means from top (J) to bottom (2)
-	// \033[1;1H means back the cursor on 1,1 coordenate
-	std::cout << "\033[2J\033[1;1H";
-}
 
-char Terminal2048::getkey(void) 
-{
-  struct termios old, new_;
-  char ch;
-  
-  tcgetattr(0, &old); /* grab old terminal i/o settings */
-  new_ = old; /* make new settings same as old settings */
-  new_.c_lflag &= ~ICANON; /* disable buffered i/o */
-  new_.c_lflag &= 0 ? ECHO : ~ECHO; /* set echo mode */
-  tcsetattr(0, TCSANOW, &new_); /* use these new terminal i/o settings now */
-  
-  ch = getchar();
-  
-  tcsetattr(0, TCSANOW, &old);
-  
-  return ch;
-}
+	std::ifstream infile("score.txt");
 
-std::string Terminal2048::set_color(colors textcol, colors backcol)
-{
-	int text = int(textcol);
-	int back = int(backcol);
-	
-	std::string color = "";
+	if(infile.is_open())
+	{
+		infile >> best_score;
+		infile.close();
+	}
+	else
+		best_score = 0;
 
-	color += "\e[";
-	color += std::to_string(text);
-	color += "m";
-
-	return color;
+	if(score > best_score)
+	{
+		std::ofstream otfile("score.txt");
+		otfile << score;
+		otfile.close();
+	}
 }
 
 void Terminal2048::choose_color_tile(unsigned tile_number)
 {
-
 	switch (tile_number)
 	{
-	/*case 0:		color = set_color(white, black); break;
-	case 2:		color = set_color(cyan, black); break;
-	case 4:		color = set_color(yellow, black); break;
-	case 8:		color = set_color(green, black); break;
-	case 16:	color = set_color(purple, black); break;
-	case 32:	color = set_color(red, black); break;
-	case 64:	color = set_color(gray, black); break;
-	case 128:	color = set_color(dark_cyan, black); break;
-	case 256:	color = set_color(dark_yellow, black); break;
-	case 512:	color = set_color(dark_green, black); break;
-	case 1024:	color = set_color(dark_purple, black); break;
-	case 2048:	color = set_color(dark_red, black); break;*/
-	case 0:		attron(A_BOLD); attron(COLOR_PAIR(1)); break;
-	case 2:		attron(A_BOLD); attron(COLOR_PAIR(2)); break;
-	case 4:		attron(A_BOLD); attron(COLOR_PAIR(3)); break;
-	case 8:		attron(A_BOLD); attron(COLOR_PAIR(4)); break;
-	case 16:	attron(A_BOLD); attron(COLOR_PAIR(5)); break;
-	case 32:	attron(A_BOLD); attron(COLOR_PAIR(6)); break;
-	case 64:	attron(A_BOLD); attron(COLOR_PAIR(7)); break;
-	case 128:	attroff(A_BOLD); attron(COLOR_PAIR(2)); break;
-	case 256:	attroff(A_BOLD); attron(COLOR_PAIR(3)); break;
-	case 512:	attroff(A_BOLD); attron(COLOR_PAIR(4)); break;
-	case 1024: 	attroff(A_BOLD); attron(COLOR_PAIR(5)); break;
-	case 2048: 	attroff(A_BOLD); attron(COLOR_PAIR(6)); break;
+		case 0:		attron(A_BOLD); attron(COLOR_PAIR(1)); break;
+		case 2:		attron(A_BOLD); attron(COLOR_PAIR(2)); break;
+		case 4:		attron(A_BOLD); attron(COLOR_PAIR(3)); break;
+		case 8:		attron(A_BOLD); attron(COLOR_PAIR(4)); break;
+		case 16:	attron(A_BOLD); attron(COLOR_PAIR(5)); break;
+		case 32:	attron(A_BOLD); attron(COLOR_PAIR(6)); break;
+		case 64:	attron(A_BOLD); attron(COLOR_PAIR(7)); break;
+		case 128:	attroff(A_BOLD); attron(COLOR_PAIR(2)); break;
+		case 256:	attroff(A_BOLD); attron(COLOR_PAIR(3)); break;
+		case 512:	attroff(A_BOLD); attron(COLOR_PAIR(4)); break;
+		case 1024: 	attroff(A_BOLD); attron(COLOR_PAIR(5)); break;
+		case 2048: 	attroff(A_BOLD); attron(COLOR_PAIR(6)); break;
 	}
 }
 
-void Terminal2048::rrefresh()
+void Terminal2048::print()
 {
-	attron(COLOR_PAIR(1));
-	attron(A_BOLD);
-	mvprintw(1, 1, "SCORE: %d", score);
-
-	unsigned v_space = 0; // vertical space
-	unsigned h_space = 0; // horizontal space
-	unsigned start_posx = (LINES/2)-(max_tiles/4); // start position x for drawing
-	unsigned start_posy = (COLS/2)-(max_tiles/2); // start position y for drawing
-
-	for(unsigned j = 0; j < SIZEGRID; j++, v_space += 2)
+	if (made_something)
 	{
-		h_space = 0;
+		attron(COLOR_PAIR(1));
+		attron(A_BOLD);
+		mvprintw(1, 1, "SCORE: %d", score);
+		mvprintw(2, 1, "BEST:  %d", score > best_score ? score : best_score);
 
-		for(unsigned i = 0; i < SIZEGRID; i++, h_space += 4)
+		unsigned v_space = 0; 												 // vertical space
+		unsigned h_space = 0; 												 // horizontal space
+		unsigned start_posx = (LINES/2)-(max_tiles/4); // start position x for drawing
+		unsigned start_posy = (COLS/2)-(max_tiles/2);  // start position y for drawing
+
+		for(unsigned j = 0; j < SIZEGRID; j++, v_space += 2)
 		{
-			unsigned pos = j*SIZEGRID + i;
+			h_space = 0;
 
-			mvhline(j + start_posx + v_space,
-						  i + start_posy + h_space,
-						  ' ',
-						  i + (h_space - 1) + start_posy + h_space);
+			for(unsigned i = 0; i < SIZEGRID; i++, h_space += 4)
+			{
+				unsigned pos = j*SIZEGRID + i;
 
-			choose_color_tile(tile[pos].value);
+				// Clear spaces between numbers with ' '
+				mvhline(j + start_posx + v_space,
+							  i + start_posy + h_space,
+							  ' ',
+							  i + (h_space - 1) + start_posy + h_space);
 
-			mvprintw(j + start_posx + v_space, // x position
-							 i + start_posy + h_space, // y position
-							 "%d",										 // what to draw
-							 tile[pos].value);				 // what var to draw
+				// Get the appropriated color based on tile's value
+				choose_color_tile(tile[pos].value);
+
+				// Put the number in the correct position
+				mvprintw(j + start_posx + v_space, // x position
+								 i + start_posy + h_space, // y position
+								 "%d",										 // what to draw
+								 tile[pos].value);				 // what var to draw
+			}
 		}
-	}
 
-	refresh();
+		refresh(); // print what change in relation to old screen
+	}
 }
 
 void Terminal2048::makepoint(unsigned int value)
 {
 	score += value;
+	if (value > biggest_tile)
+		biggest_tile = value;
 }
 
 void Terminal2048::addtile()
 {
 	
-	if (tiles_availables > 0)
+	if (made_something == 1 && tiles_availables > 0)
 	{
 		unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
 		std::default_random_engine generator(seed);
 		std::uniform_int_distribution<int> distribution_for_position(0, max_tiles - 1);
-		std::uniform_int_distribution<int> distribution_for_number(0, 100);
+		std::uniform_int_distribution<int> distribution_for_2_or_4(0, 100);
 
 		int pos;
 
@@ -156,9 +136,11 @@ void Terminal2048::addtile()
 			
 			pos = distribution_for_position(generator);
 
-		} while (tile[pos].exist != false);
+		} while ((tile[pos].exist == true) || (tiles_availables >= 4 && previous_random_position_tile == pos));
 
-		(distribution_for_number(generator) < 90) ? (tile[pos].value = 2) : (tile[pos].value = 4);
+		previous_random_position_tile = pos;
+
+		(distribution_for_2_or_4(generator) < 90) ? (tile[pos].value = 2) : (tile[pos].value = 4);
 
 		tile[pos].exist = true;
 
@@ -168,6 +150,7 @@ void Terminal2048::addtile()
 
 void Terminal2048::move_up()
 {
+	made_something = 0;
 	int ref;
 	int searcher;
 
@@ -191,7 +174,6 @@ void Terminal2048::move_up()
 				made_something = 1;
 
 				makepoint(tile[ref].value);
-				tile_2048 = check_youwin(tile[ref].value);
 			}
 
 			ref = searcher;
@@ -223,6 +205,7 @@ void Terminal2048::move_up()
 
 void Terminal2048::move_down()
 {
+	made_something = 0;
 	int ref;
 	int searcher;
 
@@ -278,6 +261,7 @@ void Terminal2048::move_down()
 
 void Terminal2048::move_left()
 {
+	made_something = 0;
 	int ref;
 	int searcher;
 
@@ -333,6 +317,7 @@ void Terminal2048::move_left()
 
 void Terminal2048::move_right()
 {
+	made_something = 0;
 	int ref;
 	int searcher;
 
@@ -385,151 +370,166 @@ void Terminal2048::move_right()
 	}
 }
 
-bool Terminal2048::check_gameover()
+void Terminal2048::check()
 {
-	int ref = 0; // reference
-	int target = 0; // target to evaluate
-	int col = 0; // column
-	bool checker = false;
+		int ref = 0; // reference
+		int target = 0; // target to evaluate
+		int col = 0; // column
+		bool checker = false;
 
-	// check horizontal
-	for (ref = 0, target = 0; target < max_tiles; ref++)
-	{
-		target = ref + 1;
-		if ( target % 4 == 0)
+		//check if won
+		if (biggest_tile == 64)
+			call(WIN);
+		else
+		// If no more free moves
+		if(tiles_availables == 0)
 		{
-			ref++;
-			target++;
-		}
+			// check horizontal
+			for (ref = 0, target = 0; target < max_tiles; ref++)
+			{
+				target = ref + 1;
+				if ( target % 4 == 0)
+				{
+					ref++;
+					target++;
+				}
 
-		if (tile[ref].value == tile[target].value) 
-		{
-			checker = false;
-			return checker;
+				if (tile[ref].value == tile[target].value) 
+				{
+					checker = false;
+					break;
+				}
+				else
+				{
+					checker = true;
+				}
+
+			}
+
+			// If can't move horizontal
+			if(checker)
+			{
+				// check vertical
+				for (ref = 0, col = 0, target = 0; col < SIZEGRID; ref += SIZEGRID)
+				{
+					if ((target = ref + 4) > max_tiles)
+					{	
+						col++;
+						ref = col;
+						target = ref + 4;
+					}
+
+					
+					if ((tile[ref].value == tile[target].value) && col < SIZEGRID)
+					{
+						checker = false;
+						break;
+					}
+					else
+						checker = true;
+				}
+
+				// If can't move horizontal and vertical
+				if(checker)
+					call(GAMEOVER);
+			}
 		}
 		else
-		{
-			checker = true;
-		}
-
-	}
-
-	// check vertical
-	for (ref = 0, col = 0, target = 0; col < SIZEGRID; ref += SIZEGRID)
-	{
-		if ((target = ref + 4) > max_tiles)
-		{	
-			col++;
-			ref = col;
-			target = ref + 4;
-		}
-
-		
-		if ((tile[ref].value == tile[target].value) && col < SIZEGRID)
-		{
-			checker = false;
-			return checker;
-		}
-		else
-			checker = true;
-	}
-
-	return checker;
+			status_game = PLAYING;
 }
 
-bool Terminal2048::call_gameover()
+void Terminal2048::call(int what)
 {
-	set_color(white, black);
-	std::cout << std::endl << std::endl << "GAME OVER!" << std::endl <<"Try again?(y/n) ";
-
-	return call_tryagain();
-}
-
-bool Terminal2048::check_youwin(unsigned number_tile)
-{
-	if (number_tile == 2048)
-		return true;
-	else
-		return false;
-}
-
-bool Terminal2048::call_youwin()
-{
-	set_color(white, black);
-	std::cout << std::endl << std::endl << "YOU WIN!" << std::endl << "Try again?(Y/n) ";
-
-	return call_tryagain();
-}
-
-bool Terminal2048::call_tryagain()
-{
-	//std::cout << std::endl << std::endl << "YOU WIN!" << std::endl << "Try again?(Y/n) ";
 	attron(A_BOLD);
 	attron(COLOR_PAIR(1));
-	mvprintw(LINES-1, 1, "You got a 2048 tile! Try Again? (Y/n)");
+
+	switch(what)
+	{
+		case GAMEOVER: mvprintw(LINES-1, 1, "Game over! Try Again? (Y/n)");
+		case WIN:			 mvprintw(LINES-1, 1, "You got a 2048 tile! Try Again? (Y/n)");
+	}
+	
 	refresh();
 
 	do{
 
-		key_stroke = getkey();
+		key_stroke = getch();
 		key_stroke = toupper(key_stroke);
-		cout << (int)key_stroke << endl;
 
 	} while (key_stroke != 'Y' && key_stroke != 'N' && (int)key_stroke != 13);
 
 	if (key_stroke == 'Y' || (int)key_stroke == 13)
-		cout << "sim!" << endl;//return true;
+		status_game = PLAY_AGAIN;
 	else
-		cout << "nao!" << endl;//return false;
+		status_game = EXIT_GAME;
 }
 
 bool Terminal2048::start()
 {
 
-	//call_tryagain();
-	//clear();
-
 	while (true)
 	{
-
-		if (made_something)
+		
+		addtile(); // add new tiles to the game
+		print(); 	 // print the new tiles
+		check(); 	 // check if win or game over (could change status_game)
+		
+		if(status_game != PLAYING)
 		{
-			addtile();
-			rrefresh();
+			if (status_game == PLAY_AGAIN)
+				return true;
+			else if (status_game == EXIT_GAME)
+				return false;
 		}
-		
-		if (!tiles_availables)
-			if (check_gameover())
-				return call_gameover();
 
-		if (tile_2048)
-			return call_youwin();
+		// Get only arrow keys
+		do{
+			
+			key_stroke = getch();
 
-		key_stroke = getch();
+		}while((int)key_stroke != K_UP && 
+					 (int)key_stroke != K_DOWN &&
+					 (int)key_stroke != K_RIGHT && 
+					 (int)key_stroke != K_LEFT);
 
-		made_something = 0;
-		
 		switch ((int)key_stroke)
 		{
-			case K_UP: 		move_up(); 	break;
+			case K_UP: 		move_up(); 	  break;
 			case K_DOWN:  move_down();	break;
 			case K_RIGHT: move_right();	break;
 			case K_LEFT:  move_left();	break;
-			//default: std::cout << (int)key_stroke << std::endl;
 		}
 	}
 }
 
-void setup_colors();
-
 void CtrlC_Event(int s){
-    //system(RESETCOLOR); 
     
-	attron(COLOR_PAIR(0));
-	standend();
-    refresh();
-    endwin();	// End curses mode
-    exit(1); 
+	attron(COLOR_PAIR(0)); // attach the default fore and background colors again at the terminal
+  refresh(); 						 // refresh the colors
+  g->update_best_score();
+  delete g;
+  endwin();							 // End curses mode
+  exit(1); 							 // Exit with code 1 (Ctrl+C event)
+}
+
+void init_ncurses()
+{
+	initscr();																	// Start curses mode
+	start_color();															// Start the color functionality
+	cbreak();																		// Line buffering disabled
+	use_default_colors();												// Use background color default
+	curs_set(0);																// hide cursor console
+	keypad(stdscr, TRUE);												// For Arrow Keys
+	noecho();																		// disable echo() in getch()
+
+	// Set up Colors
+	init_pair(1, COLOR_WHITE, COLOR_DEFAULT); 	// 0 and 128(bold)
+	init_pair(2, COLOR_CYAN, COLOR_DEFAULT); 		// 2 and 256(bold)
+	init_pair(3, COLOR_YELLOW, COLOR_DEFAULT); 	// 4 and 512(bold)
+ 	init_pair(4, COLOR_GREEN, COLOR_DEFAULT); 	// 8 and 1024(bold)
+	init_pair(5, COLOR_MAGENTA, COLOR_DEFAULT); // 16 and 2048(bold)
+	init_pair(6, COLOR_RED, COLOR_DEFAULT); 		// 32 and 4096(bold)
+	init_pair(7, COLOR_BLUE, COLOR_DEFAULT); 		// 64 and 8192(bold)
 }
 
 // Main Program
@@ -537,227 +537,23 @@ int main(void)
 {
 	// Calls ctrlc_event when we get CTRL + C event
 	struct sigaction sigIntHandler;
-   	sigIntHandler.sa_handler = CtrlC_Event;
-   	sigemptyset(&sigIntHandler.sa_mask);
-   	sigIntHandler.sa_flags = 0;
-   	sigaction(SIGINT, &sigIntHandler, NULL);
+  sigIntHandler.sa_handler = CtrlC_Event;
+  sigemptyset(&sigIntHandler.sa_mask);
+  sigIntHandler.sa_flags = 0;
+  sigaction(SIGINT, &sigIntHandler, NULL);
+	init_ncurses();
 
-	bool keep_playing;
-	char ch;
-
-	initscr();								// Start curses mode
-	start_color();							// Start the color functionality
-	cbreak();								// Line buffering disabled
-	use_default_colors();
-	curs_set(0);							// hide cursor console
-	keypad(stdscr, TRUE);					// For Arrow Keys
-	noecho();								// disable echo() in getch()
-
-	setup_colors(); 
+  bool keep_playing;
 
 	do{
-
-		Terminal2048 *g(new Terminal2048);
+		erase(); // clear screen
+		g->update_best_score();
 		keep_playing = g->start();
-
 	} while (keep_playing == true);
 
+	delete g;
 
-	standend();
-	refresh();
-	endwin();			// End curses mode
+	endwin();	// End curses mode
 	
-	return 0;
+	return 0; // End program with success
 }
-
-void setup_colors()
-{
-	unsigned R, G, B;
-
-	// 1 - WHITE
-	//R = 255; G = 255; B = 255;
-	//init_color(COLOR_WHITE, R*1000/255, G*1000/255, B*1000/255);
-
-	// 2 - CYAN
-	//R = 51; G = 255; B = 255;
-	//init_color(COLOR_CYAN, R*1000/255, G*1000/255, B*1000/255);
-
-	// 3 - YELLOW
-	//R = 255; G = 255; B = 51;
-	//init_color(COLOR_YELLOW, R*1000/255, G*1000/255, B*1000/255);
-
-	// 4 - GREEN
-	//R = 51; G = 255; B = 51;
-	//init_color(COLOR_GREEN, R*1000/255, G*1000/255, B*1000/255);
-
-	// 5 - MAGENTA
-	//R = 255; G = 51; B = 255;
-	//init_color(COLOR_MAGENTA, R*1000/255, G*1000/255, B*1000/255);
-
-	// 6 - RED
-	//R = 255; G = 51; B = 51;
-	//init_color(COLOR_RED, R*1000/255, G*1000/255, B*1000/255);
-
-	// 7 - GRAY
-	//R = 160; G = 160; B = 160;
-	//init_color(COLOR_GRAY, R*1000/255, G*1000/255, B*1000/255);
-
-	// 8 - DARK_CYAN
-	//R = 0; G = 102; B = 102;
-	//init_color(COLOR_DARK_CYAN, R*1000/255, G*1000/255, B*1000/255);
-
-	// 9 - DARK_YELLOW
-	//R = 102; G = 102; B = 0;
-	//init_color(COLOR_DARK_YELLOW, R*1000/255, G*1000/255, B*1000/255);
-
-	// 10 - DARK_GREEN
-	//R = 0; G = 102; B = 0;
-	//init_color(COLOR_DARK_GREEN, R*1000/255, G*1000/255, B*1000/255);
-
-	// 11 - DARK_MAGENTA
-	//R = 102; G = 0; B = 102;
-	//init_color(COLOR_DARK_MAGENTA, R*1000/255, G*1000/255, B*1000/255);
-
-	// 12 - DARK_RED
-	//R = 102; G = 0; B = 0;
-	//init_color(COLOR_DARK_RED, R*1000/255, G*1000/255, B*1000/255);
-
-	init_pair(1, COLOR_WHITE, COLOR_DEFAULT); // 0
-	init_pair(2, COLOR_CYAN, COLOR_DEFAULT); // 2
-	init_pair(3, COLOR_YELLOW, COLOR_DEFAULT); // 4
-	init_pair(4, COLOR_GREEN, COLOR_DEFAULT); // 8
-	init_pair(5, COLOR_MAGENTA, COLOR_DEFAULT); // 16
-	init_pair(6, COLOR_RED, COLOR_DEFAULT); // 32
-	init_pair(7, COLOR_BLUE, COLOR_DEFAULT); // 64
-	//init_pair(8, COLOR_DARK_CYAN, COLOR_DEFAULT); // 128
-	//init_pair(9, COLOR_DARK_YELLOW, COLOR_DEFAULT); // 256
-	//init_pair(10, COLOR_DARK_GREEN, COLOR_DEFAULT); // 512
-	//init_pair(11, COLOR_DARK_MAGENTA, COLOR_DEFAULT); // 1024
-	//init_pair(12, COLOR_DARK_RED, COLOR_DEFAULT); // 2048
-	//init_pair(13, COLOR_DEFAULT, COLOR_DEFAULT); // 0
-}
-// NCurses tests main
-/*
-typedef struct _win_border_struct {
-	chtype 	left, right, top, under, 
-	 	topleft, topright, underleft, underright;
-}WIN_BORDER;
-
-typedef struct _WIN_struct {
-
-	int startx, starty;
-	int height, width;
-	WIN_BORDER border;
-}WIN;
-
-void init_win_params(WIN *p_win);
-void print_win_params(WIN *p_win);
-void create_box(WIN *win, bool flag);
-
-int main(int argc, char *argv[])
-{	WIN win;
-	int ch;
-
-	initscr();								// Start curses mode
-	start_color();							// Start the color functionality
-	cbreak();								// Line buffering disabled
-
-	curs_set(0);							// hide cursor console
-	keypad(stdscr, TRUE);					// For Arrow Keys
-	noecho();								// disable echo() in getch()
-	init_pair(1, COLOR_CYAN, COLOR_BLACK);
-
-	// Initialize the window parameters
-	init_win_params(&win);
-	print_win_params(&win);
-
-	attron(COLOR_PAIR(1));
-	printw("Press E to exit");
-	refresh();
-	attroff(COLOR_PAIR(1));
-	
-	create_box(&win, TRUE);
-	while((ch = getch()) != 'E')
-	{	switch(ch)
-		{	case KEY_LEFT:
-				create_box(&win, FALSE);
-				--win.startx;
-				create_box(&win, TRUE);
-				break;
-			case KEY_RIGHT:
-				create_box(&win, FALSE);
-				++win.startx;
-				create_box(&win, TRUE);
-				break;
-			case KEY_UP:
-				create_box(&win, FALSE);
-				--win.starty;
-				create_box(&win, TRUE);
-				break;
-			case KEY_DOWN:
-				create_box(&win, FALSE);
-				++win.starty;
-				create_box(&win, TRUE);
-				break;	
-		}
-	}
-	endwin();			// End curses mode		  
-	return 0;
-}
-void init_win_params(WIN *p_win)
-{
-	p_win->height = 2;
-	p_win->width  = 3;
-
-	// LINES and COLS are set with the size screen when initscr() is called.
-	//p_win->starty = (LINES - p_win->height)/2;	
-	//p_win->startx = (COLS - p_win->width)/2;
-	p_win->starty = 1;
-	p_win->startx = 1;
-
-	p_win->border.left       = '|';
-	p_win->border.right      = '|';
-	p_win->border.top        = '-';
-	p_win->border.under      = '-';
-	p_win->border.topleft    = '+';
-	p_win->border.topright   = '+';
-	p_win->border.underleft  = '+';
-	p_win->border.underright = '+';
-
-}
-void print_win_params(WIN *p_win)
-{
-#ifdef _DEBUG
-	mvprintw(25, 0, "%d %d %d %d", p_win->startx, p_win->starty, 
-				p_win->width, p_win->height);
-	refresh();
-#endif
-}
-void create_box(WIN *p_win, bool flag)
-{	int i, j;
-	int x, y, w, h;
-
-	x = p_win->startx;
-	y = p_win->starty;
-	w = p_win->width;
-	h = p_win->height;
-
-	if(flag == TRUE)
-	{	mvaddch(y, x, p_win->border.topleft);
-		mvaddch(y, x + w, p_win->border.topright);
-		mvaddch(y + h, x, p_win->border.underleft);
-		mvaddch(y + h, x + w, p_win->border.underright);
-		mvhline(y, x + 1, p_win->border.top, w - 1);
-		mvhline(y + h, x + 1, p_win->border.under, w - 1);
-		mvvline(y + 1, x, p_win->border.left, h - 1);
-		mvvline(y + 1, x + w, p_win->border.right, h - 1);
-
-	}
-	else
-		for(j = y; j <= y + h; ++j)
-			for(i = x; i <= x + w; ++i)
-				mvaddch(j, i, ' ');
-				
-	refresh();
-
-}*/

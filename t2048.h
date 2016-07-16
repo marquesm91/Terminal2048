@@ -37,6 +37,12 @@
 #define COLOR_DARK_MAGENTA 12
 #define COLOR_DARK_RED 13
 
+#define GAMEOVER 1
+#define WIN 2
+#define PLAY_AGAIN 3
+#define EXIT_GAME 4
+#define PLAYING 5
+
 using namespace std;
 
 static const char tabulation = 9;
@@ -68,24 +74,21 @@ class Terminal2048
 public:
 
 	Terminal2048();
+	void update_best_score();
 	bool start();
 
 private:
 
 	// Methods for basic instructions
-	void clear();
-	void rrefresh();
+	void print();
 	void addtile();
-	char getkey();
 
 	// Methods for score
 	void makepoint(unsigned int value);
-	int get_best_score();
 
 	// Methods for change colors
-	std::string set_color(colors textcol, colors backcol);
-	void choose_color_tile(unsigned number_tile);
-	
+	void choose_color_tile(unsigned biggest_tile);
+
 	// Methods for Moviments
 	void move_up();
 	void move_down();
@@ -93,24 +96,26 @@ private:
 	void move_left();
 
 	// Methods for possible looses
-	bool check_gameover();
-	bool call_gameover();
+	//bool check_gameover();
+	//bool call_gameover();
 
 	// Methods for possible wins
-	bool check_youwin(unsigned number_tile);
-	bool call_youwin();
+	void check();
+	//bool call_youwin();
 	
 	// Method for try again
-	bool call_tryagain();
+	void call(int what);
 
 	// Attributes
-	unsigned tile_2048;
+	unsigned biggest_tile;
 	unsigned tiles_availables;
 	bool try_again;
 	unsigned score;
 	unsigned best_score;
 	unsigned made_something;
 	char key_stroke;
+	int status_game;
+	int previous_random_position_tile;
 
 	// Array of structs for tiles
 	struct tile{
