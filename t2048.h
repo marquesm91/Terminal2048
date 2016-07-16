@@ -18,9 +18,7 @@
 #include <signal.h>
 #include <ctype.h>
 
-#define RESETCOLOR "echo -e \033[0m"
-#define YES 89
-#define NO 78
+// Use default color when init_curses
 #define COLOR_DEFAULT -1
 
 // Integer numbers for Arrow Keys
@@ -29,45 +27,18 @@
 #define K_RIGHT 5		
 #define K_LEFT 4
 
-// Extra colors
-#define COLOR_GRAY 8
-#define COLOR_DARK_CYAN 9
-#define COLOR_DARK_YELLOW 10
-#define COLOR_DARK_GREEN 11
-#define COLOR_DARK_MAGENTA 12
-#define COLOR_DARK_RED 13
-
 #define GAMEOVER 1
 #define WIN 2
 #define PLAY_AGAIN 3
 #define EXIT_GAME 4
 #define PLAYING 5
 
-using namespace std;
+#define TARGET_TILE 2048 // if you have the TARGET_TILE you win the game
 
-static const char tabulation = 9;
 static const int SIZEGRID = 4;
 static const int max_tiles = SIZEGRID*SIZEGRID;
 
-enum colors
-{
-	black = 49, //default background
-	dark_blue = 34,
-	dark_green = 32,
-	dark_aqua, dark_cyan = 36,
-	dark_red = 31,
-	dark_purple = 35, dark_pink = 35, dark_magenta = 35,
-	dark_yellow = 33,
-	dark_white = 97,
-	gray = 37,
-	blue = 94,
-	green = 92,
-	aqua = 96, cyan = 96,
-	red = 91,
-	purple = 95, pink = 95, magenta = 95,
-	yellow = 93,
-	white = 97
-};
+using namespace std;
 
 class Terminal2048
 {
@@ -81,10 +52,10 @@ private:
 
 	// Methods for basic instructions
 	void print();
-	void addtile();
+	void add_tile();
 
 	// Methods for score
-	void makepoint(unsigned int value);
+	void score_point(unsigned int value);
 
 	// Methods for change colors
 	void choose_color_tile(unsigned biggest_tile);
@@ -95,21 +66,15 @@ private:
 	void move_right();
 	void move_left();
 
-	// Methods for possible looses
-	//bool check_gameover();
-	//bool call_gameover();
-
-	// Methods for possible wins
+	// check if you win, lose or still playing
 	void check();
-	//bool call_youwin();
 	
-	// Method for try again
+	// Method for try again and print if you win or loose
 	void call(int what);
 
 	// Attributes
 	unsigned biggest_tile;
 	unsigned tiles_availables;
-	bool try_again;
 	unsigned score;
 	unsigned best_score;
 	unsigned made_something;

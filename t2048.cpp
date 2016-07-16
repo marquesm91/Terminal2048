@@ -12,7 +12,7 @@ Terminal2048 *g(new Terminal2048());
 Terminal2048::Terminal2048()
 {
 	score = 0; 													// Initial current score
-	made_something = 1; 								// to addtiles and print what change
+	made_something = 1; 								// to add_tiles and print what change
 	tiles_availables = max_tiles; 			// available tiles at the game start is always the size board (or max_tiles)
 	biggest_tile = 0; 									// biggest tile at the game start is always 0
 	status_game = PLAYING; 							// always start the game as PLAYING
@@ -27,7 +27,7 @@ Terminal2048::Terminal2048()
 		tile[i].value = 0;
 	}
 
-	addtile();
+	add_tile();
 }
 
 void Terminal2048::update_best_score()
@@ -113,14 +113,14 @@ void Terminal2048::print()
 	}
 }
 
-void Terminal2048::makepoint(unsigned int value)
+void Terminal2048::score_point(unsigned int value)
 {
 	score += value;
 	if (value > biggest_tile)
 		biggest_tile = value;
 }
 
-void Terminal2048::addtile()
+void Terminal2048::add_tile()
 {
 	
 	if (made_something == 1 && tiles_availables > 0)
@@ -173,7 +173,7 @@ void Terminal2048::move_up()
 				tiles_availables++;
 				made_something = 1;
 
-				makepoint(tile[ref].value);
+				score_point(tile[ref].value);
 			}
 
 			ref = searcher;
@@ -228,7 +228,7 @@ void Terminal2048::move_down()
 				tiles_availables++;
 				made_something = 1;
 
-				makepoint(tile[ref].value);
+				score_point(tile[ref].value);
 			}
 
 			ref = searcher;
@@ -284,7 +284,7 @@ void Terminal2048::move_left()
 				tiles_availables++;
 				made_something = 1;
 
-				makepoint(tile[ref].value);
+				score_point(tile[ref].value);
 			}
 
 			ref = searcher;
@@ -340,7 +340,7 @@ void Terminal2048::move_right()
 				tiles_availables++;
 				made_something = 1;
 
-				makepoint(tile[ref].value);
+				score_point(tile[ref].value);
 			}
 
 			ref = searcher;
@@ -378,7 +378,7 @@ void Terminal2048::check()
 		bool checker = false;
 
 		//check if won
-		if (biggest_tile == 64)
+		if (biggest_tile == TARGET_TILE)
 			call(WIN);
 		else
 		// If no more free moves
@@ -470,7 +470,7 @@ bool Terminal2048::start()
 	while (true)
 	{
 		
-		addtile(); // add new tiles to the game
+		add_tile(); // add new tiles to the game
 		print(); 	 // print the new tiles
 		check(); 	 // check if win or game over (could change status_game)
 		
