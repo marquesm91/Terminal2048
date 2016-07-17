@@ -4,6 +4,8 @@ Created 10 June 2014 (Version 1.0)
 
 Console Application of 2048 Game using **Ncurses**
 
+![Image 2048](https://github.com/marquesm91/Terminal2048/img/2048_example.png "2048 Example")
+
 ## Installation
 
 Ncurses:
