@@ -27,8 +27,8 @@
 #define K_RIGHT 5		
 #define K_LEFT 4
 
-#define GAMEOVER 1
-#define WIN 2
+static const int GAMEOVER = 1;
+static const int WIN = 2;
 #define PLAY_AGAIN 3
 #define EXIT_GAME 4
 #define PLAYING 5
@@ -47,6 +47,7 @@ public:
 	Terminal2048();
 	void update_best_score();
 	bool start();
+	void init_game();
 
 private:
 
@@ -80,7 +81,7 @@ private:
 	unsigned made_something;
 	char key_stroke;
 	int status_game;
-	int previous_random_position_tile;
+	int last_tile_add;
 
 	// Array of structs for tiles
 	struct tile{

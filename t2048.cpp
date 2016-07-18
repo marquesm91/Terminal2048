@@ -11,23 +11,7 @@ Terminal2048 *g(new Terminal2048());
 
 Terminal2048::Terminal2048()
 {
-	score = 0; 													// Initial current score
-	made_something = 1; 								// to add_tiles and print what change
-	tiles_availables = max_tiles; 			// available tiles at the game start is always the size board (or max_tiles)
-	biggest_tile = 0; 									// biggest tile at the game start is always 0
-	status_game = PLAYING; 							// always start the game as PLAYING
-	previous_random_position_tile = -1; // help to improve random algorithm
-
-	update_best_score();
-
-	// Initilize every tile with 0 and fale existance
-	for (unsigned int i = 0; i < max_tiles; i++)
-	{
-		tile[i].exist = false;
-		tile[i].value = 0;
-	}
-
-	add_tile();
+	init_game();
 }
 
 void Terminal2048::update_best_score()
@@ -72,12 +56,14 @@ void Terminal2048::choose_color_tile(unsigned tile_number)
 
 void Terminal2048::print()
 {
-	if (made_something)
+	if (made_something == 1)
 	{
+		attroff(A_STANDOUT);
 		attron(COLOR_PAIR(1));
 		attron(A_BOLD);
 		mvprintw(1, 1, "SCORE: %d", score);
 		mvprintw(2, 1, "BEST:  %d", score > best_score ? score : best_score);
+		attroff(A_BOLD);
 
 		unsigned v_space = 0; 												 // vertical space
 		unsigned h_space = 0; 												 // horizontal space
@@ -92,6 +78,8 @@ void Terminal2048::print()
 			{
 				unsigned pos = j*SIZEGRID + i;
 
+				attroff(A_STANDOUT);
+
 				// Clear spaces between numbers with ' '
 				mvhline(j + start_posx + v_space,
 							  i + start_posy + h_space,
@@ -100,6 +88,8 @@ void Terminal2048::print()
 
 				// Get the appropriated color based on tile's value
 				choose_color_tile(tile[pos].value);
+
+				if(pos == last_tile_add) attron(A_STANDOUT);
 
 				// Put the number in the correct position
 				mvprintw(j + start_posx + v_space, // x position
@@ -136,9 +126,10 @@ void Terminal2048::add_tile()
 			
 			pos = distribution_for_position(generator);
 
-		} while ((tile[pos].exist == true) || (tiles_availables >= 4 && previous_random_position_tile == pos));
+		//} while ((tile[pos].exist == true) || (tiles_availables >= 4 && last_tile_add == pos));
+		} while (tile[pos].exist == true);
 
-		previous_random_position_tile = pos;
+		last_tile_add = pos;
 
 		(distribution_for_2_or_4(generator) < 90) ? (tile[pos].value = 2) : (tile[pos].value = 4);
 
@@ -374,8 +365,8 @@ void Terminal2048::check()
 {
 		int ref = 0; // reference
 		int target = 0; // target to evaluate
-		int col = 0; // column
-		bool checker = false;
+		int col = 0; // column for vertical
+		bool checker = true; // if checker = true is gameover
 
 		//check if won
 		if (biggest_tile == TARGET_TILE)
@@ -385,13 +376,13 @@ void Terminal2048::check()
 		if(tiles_availables == 0)
 		{
 			// check horizontal
-			for (ref = 0, target = 0; target < max_tiles; ref++)
+			for (ref = 0; ref < max_tiles - 1; ref++)
 			{
 				target = ref + 1;
-				if ( target % 4 == 0)
+				if (target % 4 == 0)
 				{
 					ref++;
-					target++;
+					target = ref + 1;
 				}
 
 				if (tile[ref].value == tile[target].value) 
@@ -399,38 +390,31 @@ void Terminal2048::check()
 					checker = false;
 					break;
 				}
-				else
-				{
-					checker = true;
-				}
-
 			}
 
 			// If can't move horizontal
 			if(checker)
 			{
 				// check vertical
-				for (ref = 0, col = 0, target = 0; col < SIZEGRID; ref += SIZEGRID)
+				for (ref = 0, col = 0; col < SIZEGRID; ref += SIZEGRID)
 				{
-					if ((target = ref + 4) > max_tiles)
+					target = ref + 4;
+					if (target > max_tiles)
 					{	
 						col++;
 						ref = col;
 						target = ref + 4;
 					}
 
-					
 					if ((tile[ref].value == tile[target].value) && col < SIZEGRID)
 					{
 						checker = false;
 						break;
 					}
-					else
-						checker = true;
 				}
 
 				// If can't move horizontal and vertical
-				if(checker)
+				if(checker == true)
 					call(GAMEOVER);
 			}
 		}
@@ -445,8 +429,8 @@ void Terminal2048::call(int what)
 
 	switch(what)
 	{
-		case GAMEOVER: mvprintw(LINES-1, 1, "Game over! Try Again? (Y/n)");
-		case WIN:			 mvprintw(LINES-1, 1, "You got a 2048 tile! Try Again? (Y/n)");
+		case GAMEOVER: attroff(A_STANDOUT); attroff(A_BOLD); mvprintw(LINES-1, 1, "Game over! Try Again? (Y/n)"); break;
+		case WIN:			 attroff(A_STANDOUT); attroff(A_BOLD); mvprintw(LINES-1, 1, "You got a 2048 tile! Try Again? (Y/n)"); break;
 	}
 	
 	refresh();
@@ -454,14 +438,38 @@ void Terminal2048::call(int what)
 	do{
 
 		key_stroke = getch();
+		cout << key_stroke << endl;
 		key_stroke = toupper(key_stroke);
+		cout << key_stroke << endl;
 
-	} while (key_stroke != 'Y' && key_stroke != 'N' && (int)key_stroke != 13);
+	} while (key_stroke != 'Y' && key_stroke != 'N' && key_stroke != '\n');
 
-	if (key_stroke == 'Y' || (int)key_stroke == 13)
+	if (key_stroke == 'Y' || key_stroke == '\n')
 		status_game = PLAY_AGAIN;
 	else
 		status_game = EXIT_GAME;
+}
+
+void Terminal2048::init_game()
+{
+	score = 0; 													// Initial current score
+	made_something = 1; 								// to add_tiles and print what change
+	tiles_availables = max_tiles; 			// available tiles at the game start is always the size board (or max_tiles)
+	biggest_tile = 0; 									// biggest tile at the game start is always 0
+	status_game = PLAYING; 							// always start the game as PLAYING
+	last_tile_add = -1; 								// help to improve random algorithm
+
+	update_best_score();
+
+	// Initilize every tile with 0 and fale existance
+	for (unsigned int i = 0; i < max_tiles; i++)
+	{
+		tile[i].exist = false;
+		tile[i].value = 0;
+	}
+
+	add_tile();
+	print();
 }
 
 bool Terminal2048::start()
@@ -543,13 +551,14 @@ int main(void)
   sigaction(SIGINT, &sigIntHandler, NULL);
 	init_ncurses();
 
-  bool keep_playing;
+  //bool keep_playing;
 
-	do{
-		erase(); // clear screen
-		g->update_best_score();
-		keep_playing = g->start();
-	} while (keep_playing == true);
+  while(g->start() == true)
+  {
+  	clear(); // clear screen with ncurses
+  	//g->update_best_score();
+  	g->init_game();
+  }
 
 	delete g;
 
